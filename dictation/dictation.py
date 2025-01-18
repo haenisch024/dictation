@@ -78,26 +78,44 @@ is_recording = False
 frames = []      # To store audio data while recording
 stream = None    # Will be our PyAudio stream object
 
+hotkey = {keyboard.Key.ctrl_l, keyboard.Key.space}
 pressed_keys = set()
 
 def on_press(key):
     pressed_keys.add(key)
 
 def on_release(key):
-    if key in pressed_keys:
+    try:
         pressed_keys.remove(key)
+    except KeyError:
+        pass
 
 def hotkey_pressed():
     # Check that any of the control keys and the space key are pressed
     ctrl_keys = {keyboard.Key.ctrl_l, keyboard.Key.ctrl_r}
     return (keyboard.Key.space in pressed_keys) and any(k in pressed_keys for k in ctrl_keys)
 
+def darwin_intercept(event_type, event):
+    if hotkey_pressed():
+        print('darwin supress hotkey')
+        return None
+    else:
+        return event
+    
+def win32_event_filter(msg, data):
+    if hotkey_pressed():
+        print('windows supress hotkey')
+        keyboardListener.suppress_event()
+    
 # Start the listener in a separate thread
-listener = keyboard.Listener(on_press=on_press, on_release=on_release)
-listener.start()
+keyboardListener = keyboard.Listener(on_press=on_press,
+                             on_release=on_release,
+                             darwin_intercept=darwin_intercept,
+                             win32_event_filter=win32_event_filter)
+keyboardListener.start()
 
 def start_recording():
-    """Start recording from the microphone.""" 
+    """Start recording from the microphone."""
     global stream, frames, is_recording
     frames = []
 
