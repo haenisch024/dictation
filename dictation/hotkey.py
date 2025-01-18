@@ -31,7 +31,6 @@ def darwin_intercept(event_type, event):
     # This executes *after* on_press and on_release so hotkey_pressed()
     # will be true already when we decide if we should suppress the final key of the hotkey
     if hotkey_pressed():
-        print('darwin suppress hotkey')
         return None
     else:
         return event
