@@ -1,4 +1,3 @@
-import keyboard
 import time
 import typer
 import pyperclip

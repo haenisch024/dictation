@@ -1,8 +1,8 @@
 from dotenv import load_dotenv, set_key
 from openai import OpenAI, OpenAIError, AuthenticationError, BadRequestError
-import keyboard
 import pyaudio
 import wave
+from pynput import keyboard
 from playsound import playsound
 import pyperclip
 import os
@@ -78,11 +78,26 @@ is_recording = False
 frames = []      # To store audio data while recording
 stream = None    # Will be our PyAudio stream object
 
+pressed_keys = set()
+
+def on_press(key):
+    pressed_keys.add(key)
+
+def on_release(key):
+    if key in pressed_keys:
+        pressed_keys.remove(key)
+
 def hotkey_pressed():
-    return keyboard.is_pressed('ctrl') and keyboard.is_pressed('space')
+    # Check that any of the control keys and the space key are pressed
+    ctrl_keys = {keyboard.Key.ctrl_l, keyboard.Key.ctrl_r}
+    return (keyboard.Key.space in pressed_keys) and any(k in pressed_keys for k in ctrl_keys)
+
+# Start the listener in a separate thread
+listener = keyboard.Listener(on_press=on_press, on_release=on_release)
+listener.start()
 
 def start_recording():
-    """Start recording from the microphone."""
+    """Start recording from the microphone.""" 
     global stream, frames, is_recording
     frames = []
 
@@ -172,6 +187,7 @@ def dictate():
     global is_recording, frames, stream
     
     # Start recording
+    print('start record')
     start_recording()
 
     while True:

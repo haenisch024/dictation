@@ -20,9 +20,9 @@ classifiers = [
 dependencies = [
     "python-dotenv",
     "openai==1.59.8",
-    "keyboard",
     "pyaudio",
     "playsound==1.2.2",
+    "pynput",
     "pyperclip",
     "typer",
 ]
