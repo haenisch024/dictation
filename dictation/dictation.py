@@ -2,11 +2,12 @@ from dotenv import load_dotenv, set_key
 from openai import OpenAI, OpenAIError, AuthenticationError, BadRequestError
 import pyaudio
 import wave
-from pynput import keyboard
 from playsound import playsound
 import pyperclip
 import os
 import sys
+
+import dictation.hotkey
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
 
@@ -77,42 +78,6 @@ p = pyaudio.PyAudio()
 is_recording = False
 frames = []      # To store audio data while recording
 stream = None    # Will be our PyAudio stream object
-
-hotkey = {keyboard.Key.ctrl_l, keyboard.Key.space}
-pressed_keys = set()
-
-def on_press(key):
-    pressed_keys.add(key)
-
-def on_release(key):
-    try:
-        pressed_keys.remove(key)
-    except KeyError:
-        pass
-
-def hotkey_pressed():
-    # Check that any of the control keys and the space key are pressed
-    ctrl_keys = {keyboard.Key.ctrl_l, keyboard.Key.ctrl_r}
-    return (keyboard.Key.space in pressed_keys) and any(k in pressed_keys for k in ctrl_keys)
-
-def darwin_intercept(event_type, event):
-    if hotkey_pressed():
-        print('darwin supress hotkey')
-        return None
-    else:
-        return event
-    
-def win32_event_filter(msg, data):
-    if hotkey_pressed():
-        print('windows supress hotkey')
-        keyboardListener.suppress_event()
-    
-# Start the listener in a separate thread
-keyboardListener = keyboard.Listener(on_press=on_press,
-                             on_release=on_release,
-                             darwin_intercept=darwin_intercept,
-                             win32_event_filter=win32_event_filter)
-keyboardListener.start()
 
 def start_recording():
     """Start recording from the microphone."""
@@ -209,7 +174,7 @@ def dictate():
     start_recording()
 
     while True:
-        if not hotkey_pressed() and is_recording:
+        if not dictation.hotkey.hotkey_pressed() and is_recording:
             stop_recording() # blocks until recording is completed
             # Once we stop, we process the audio with Whisper and then GPT-4o
             cleaned_text = process_audio_with_whisper_and_gpt()
