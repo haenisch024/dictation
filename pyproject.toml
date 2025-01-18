@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dictation"
-version = "0.1.1"
+version = "0.2.0"
 description = "Dictate to your computer with hotkeys. ctrl+space to start dictating, ctrl+v to paste the cleaned up result."
 readme = "README.md"
 authors = [

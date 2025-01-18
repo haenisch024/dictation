@@ -6,6 +6,7 @@ from playsound import playsound
 import pyperclip
 import os
 import sys
+import time
 
 import dictation.hotkey
 
@@ -169,21 +170,28 @@ def dictate():
     """Get records a dictation until the hotkeys are released, then transcribes and cleans up the result."""
     global is_recording, frames, stream
     
-    # Start recording
-    print('start record')
-    start_recording()
-
+    dictation.hotkey.hotkey_start()
+    
     while True:
-        if not dictation.hotkey.hotkey_pressed() and is_recording:
-            stop_recording() # blocks until recording is completed
+        # Check hotkey states periodically
+        if dictation.hotkey.hotkey_pressed() and not is_recording:
+            # Start recording
+            print('start record')
+            start_recording()
+
+        elif not dictation.hotkey.hotkey_pressed() and is_recording:
+            stop_recording()
             # Once we stop, we process the audio with Whisper and then GPT-4o
             cleaned_text = process_audio_with_whisper_and_gpt()
-            print(f"Cleaned text:\n{cleaned_text}\n")
-            break
+            pyperclip.copy(cleaned_text)
+            print(f"Cleaned text (copied to clipboard):\n{cleaned_text}\n")
         
         # If we're in the middle of recording, read audio frames
         if is_recording and stream is not None:
             data = stream.read(CHUNK)
             frames.append(data)
 
-    return cleaned_text
+        time.sleep(0.05)  # Small delay to prevent high CPU usage
+            
+
+        
