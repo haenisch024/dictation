@@ -9,7 +9,6 @@ import time
 import os
 import subprocess
 import sys
-import winreg
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
 
@@ -23,6 +22,7 @@ def get_user_env_var(name):
     """Configure API key and Create the OpenAI client"""
     try:
         if platform.system() == "Windows":
+            import winreg
             with winreg.OpenKey(winreg.HKEY_CURRENT_USER, "Environment") as key:
                 value, _ = winreg.QueryValueEx(key, name)
                 return value
