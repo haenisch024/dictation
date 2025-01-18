@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dictation"
+version = "0.1.0"
+description = "Dictate to your computer with hotkeys. ctrl+space to start dictating, ctrl+v to paste the cleaned up result."
+readme = "README.md"
+authors = [
+    { name = "John Hunt", email = "jjdhunt@gmail.com" }
+]
+license = { text = "MIT" }
+requires-python = ">=3.6"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "openai==1.59.8",
+    "keyboard",
+    "pyaudio",
+    "playsound==1.2.2",
+    "pyperclip",
+    "typer",
+]
+
+[project.scripts]
+    dictate = "dictation.dictate:app"
+
+[project.urls]
+"Homepage" = "https://github.com/jjdhunt/dictation"
