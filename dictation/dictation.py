@@ -1,13 +1,11 @@
+from dotenv import load_dotenv, set_key
 from openai import OpenAI, OpenAIError, AuthenticationError, BadRequestError
 import keyboard
 import pyaudio
 import wave
-import platform
 from playsound import playsound
 import pyperclip
-import time
 import os
-import subprocess
 import sys
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
@@ -17,50 +15,30 @@ start_transcription_sound = os.path.join(script_dir, "sounds", "506545__matrixxx
 completion_sound = os.path.join(script_dir, "sounds", "388046__paep3nguin__beep_up-2.wav")
 error_sound = os.path.join(script_dir, "sounds", "38718__shimsewn__low-tone-with-ringmod-100-200.wav")
 
+ENV_FILE = ".env"
 
-def get_user_env_var(name):
-    """Configure API key and Create the OpenAI client"""
-    try:
-        if platform.system() == "Windows":
-            import winreg
-            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, "Environment") as key:
-                value, _ = winreg.QueryValueEx(key, name)
-                return value
-        elif platform.system() in ["Linux", "Darwin"]:  # macOS is "Darwin"
-            return None 
-    except FileNotFoundError:
-        return None
+# Ensure the .env file exists and load it
+if not os.path.exists(ENV_FILE):
+    with open(ENV_FILE, "w") as file:
+        pass  # Create an empty .env file if it doesn't exist
+load_dotenv(ENV_FILE)
 
 def get_api_key():
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        api_key = get_user_env_var("OPENAI_API_KEY")
-    return api_key
+    """Retrieve the API key from the .env file or environment variables."""
+    return os.getenv("OPENAI_API_KEY")
 
 def prompt_for_api_key(prompt):
+    """Prompt the user to input the API key."""
     try:
-        api_key = input(prompt)
-        return api_key
+        return input(prompt)
     except KeyboardInterrupt:
-        print("\nGoodby.")
+        print("\nGoodbye.")
         sys.exit(0)
 
-def set_api_key_environment_variable(api_key):
-    # set persistent environment variable
-    if platform.system() == "Windows":
-        # Use setx for Windows
-        subprocess.run(["setx", "OPENAI_API_KEY", api_key], shell=True)
-    elif platform.system() in ["Linux", "Darwin"]:  # macOS is "Darwin"
-        # Append to ~/.bashrc or ~/.zshrc
-        shell_config = os.path.expanduser("~/.bashrc")  # Adjust for zsh if needed
-        if os.environ.get("SHELL", "").endswith("zsh"):
-            shell_config = os.path.expanduser("~/.zshrc")
-        with open(shell_config, "a") as file:
-            file.write(f'\nexport "OPENAI_API_KEY"="{api_key}"\n')
-        # Source the file immediately (for the current session)
-        subprocess.run(f"source {shell_config}", shell=True, executable="/bin/bash")
-    else:
-        raise NotImplementedError(f"Unsupported OS: {platform.system()}")
+def set_api_key(api_key):
+    """Save the API key to the .env file programmatically."""
+    set_key(ENV_FILE, "OPENAI_API_KEY", api_key)
+    print("API key has been saved to the .env file.")
 
 def get_valid_client(api_key):
     client = OpenAI(api_key=api_key)
@@ -80,9 +58,9 @@ while not client:
     client = get_valid_client(api_key=api_key)
     if not client:
         api_key = prompt_for_api_key(f"OPENAI_API_KEY='{api_key}' is invalid! Please provide a current valid API key (it usually starts with 'sk-'). You only need to provide this the first time you run the Dictator:\n")
-
-# Save the validated OPENAI API key as an environment variable for future sessions
-set_api_key_environment_variable(api_key)
+        if api_key:
+            # Save the validated OPENAI API key as an environment variable for future sessions
+            set_api_key(api_key)
 
 
 ##########################
