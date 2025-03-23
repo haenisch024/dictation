@@ -127,17 +127,22 @@ def process_audio_with_whisper_and_gpt():
     pyperclip.copy("TRANSCRIPTION_IN_PROGRESS")
 
     # Send audio to Whisper for transcription
-    with open(TEMP_WAV, "rb") as audio_file:
-        try:
+    try:
+        with open(TEMP_WAV, "rb") as audio_file:
             transcription = client.audio.transcriptions.create(model="whisper-1", file=audio_file)
+            transcribed_text = transcription.text
+    except BadRequestError:
+        print('Audio recording too short to transcribe. Skipping it.')
+        playsound(error_sound)
+        return
+    finally:
+        if os.path.exists(TEMP_WAV):
+            try:
+                audio_file.close()
+            except:
+                pass
             os.remove(TEMP_WAV)
-        except BadRequestError:
-            print('Audio recording too short to transcribe. Skipping it.')
-            playsound(error_sound)
-            os.remove(TEMP_WAV)
-            return
 
-    transcribed_text = transcription.text
     print(f"Raw transcription:\n{transcribed_text}\n")
 
     # --- Send the transcribed text to GPT-4o for cleaning ---
