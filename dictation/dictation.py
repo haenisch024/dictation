@@ -152,15 +152,17 @@ def process_audio_with_whisper_and_gpt():
     response = client.chat.completions.create(
         model="gpt-4o",  # Adjust to your GPT-4o deployment name if applicable
         messages=[
-            {"role": "developer", "content": """The user will give you a transcription of a dictation.
+            {
+                "role": "developer",
+                "content": """The user will give you a transcription of a dictation.
 You should write a summary of the meeting including key points and action items. 
 When possible, action items should include action summary, owner, due date. 
-Draft a response for all actions where a report or email needs to be written."""},
+Draft a response for all actions where a report or email needs to be written.
+Provide the response in plain text without any markdown formatting (no ** characters)""",
+            },
             {
                 "role": "user",
-                "content": (
-                    f"Dictation to clean up:\n\n{transcribed_text}"
-                ),
+                "content": (f"Dictation to clean up:\n\n{transcribed_text}"),
             },
         ],
     )
