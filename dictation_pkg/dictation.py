@@ -170,7 +170,7 @@ Provide the response in plain text without any markdown formatting (no ** charac
     cleaned_text = response.choices[0].message.content
 
     playsound(completion_sound)
-
+    print("Transcription returned:", cleaned_text)
     return cleaned_text
 
 
@@ -224,8 +224,20 @@ def transcribe_audio_file(audio_file):
     response = client.chat.completions.create(
         model="gpt-4o",
         messages=[
-            {"role": "developer", "content": "Clean the dictation by removing unnecessary words while staying as close as possible to the original dictation."},
-            {"role": "user", "content": f"Dictation to clean up:\n\n{transcribed_text}"},
+            {
+                "role": "developer",
+                "content": (
+                    "The user will give you a transcription of a dictation.\n"
+                    "You should write a detailed summary of the meeting including key points and any action items.\n"
+                    "For each action item, include the action summary, the owner, and the due date.\n"
+                    "Also, draft a response (such as an email) for any actions where a report or email needs to be written.\n"
+                    "Return the result as plain text without any markdown formatting."
+                )
+            },
+            {
+                "role": "user",
+                "content": f"Dictation to clean up:\n\n{transcribed_text}"
+            },
         ],
     )
     cleaned_text = response.choices[0].message.content
