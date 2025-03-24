@@ -1,5 +1,5 @@
 import typer
-from dictation.dictation import dictate
+from dictation_pkg.dictation import dictate
 
 app = typer.Typer()
 

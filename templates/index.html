@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Dictation Service</title>
+    </head>
+    <body>
+        <h1>Dictation Service</h1>
+        <label for="agenda">Meeting Agenda: Enter meeting agenda here or leave blank.</label>
+        <br>
+        <textarea id="agenda" rows="4" cols="50" placeholder="Enter meeting agenda here..."></textarea>
+        <br><br>
+        <button id="recordButton">Record</button>
+        <br><br>
+        <label for="summary">Summary:</label>
+        <br>
+        <textarea id="summary" rows="10" cols="80" readonly></textarea>
+        <script>
+            // Variables to manage recording state and media recorder
+            let mediaRecorder;
+            let audioChunks = [];
+            let isRecording = false;
+
+            // Request microphone access
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(stream => {
+                    mediaRecorder = new MediaRecorder(stream);
+                    mediaRecorder.ondataavailable = event => {
+                        audioChunks.push(event.data);
+                    };
+                    mediaRecorder.onstop = () => {
+                        // Create a blob from the audio chunks when recording stops
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                        audioChunks = []; // Clear audio chunks for the next recording
+                        // Prepare form data including the audio file and meeting agenda
+                        const formData = new FormData();
+                        formData.append('audio', audioBlob, 'recording.wav');
+                        const agendaText = document.getElementById('agenda').value;
+                        formData.append('agenda', agendaText);
+                        // Send the form data to the server
+                        fetch('/upload', {
+                            method: 'POST',
+                            body: formData,
+                            credentials: 'include'
+                        })
+                            .then(response => response.json())
+                            .then(data => {
+                                // Display the transcription result in the Summary text area
+                                document.getElementById('summary').value = data.transcription;
+                            })
+                            .catch(error => {
+                                document.getElementById('summary').value = 'Error: ' + error;
+                            });
+                    };
+                })
+                .catch(error => {
+                    alert('Error accessing microphone: ' + error);
+                });
+
+            // Toggle recording when the Record button is pressed
+            document.getElementById('recordButton').addEventListener('click', function () {
+                if (!isRecording) {
+                    mediaRecorder.start();
+                    isRecording = true;
+                    document.getElementById('recordButton').innerText = 'Stop';
+                } else {
+                    mediaRecorder.stop();
+                    isRecording = false;
+                    document.getElementById('recordButton').innerText = 'Record';
+                }
+            });
+        </script>
+    </body>
+</html>

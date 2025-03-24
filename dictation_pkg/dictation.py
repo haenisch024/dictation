@@ -8,7 +8,7 @@ import os
 import sys
 import time
 
-import dictation.hotkey
+import dictation_pkg.hotkey
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
 
@@ -66,7 +66,7 @@ while not client:
 
 
 ##########################
-# 2. Audio Recording Setup
+# 2. Audio Recording Setup (Desktop Mode - not used for the web version)
 ##########################
 CHUNK = 1024           # Number of frames per buffer
 FORMAT = pyaudio.paInt16
@@ -178,11 +178,11 @@ def dictate():
     """Record a dictation until toggled off, then transcribes and cleans up the result."""
     global is_recording, frames, stream
 
-    dictation.hotkey.hotkey_start()
+    dictation_pkg.hotkey.hotkey_start()
     hotkey_prev = False  # Tracks the previous state of the hotkey
 
     while True:
-        current_hotkey = dictation.hotkey.hotkey_pressed()
+        current_hotkey = dictation_pkg.hotkey.hotkey_pressed()
         # Check for a rising edge: hotkey is pressed now, but wasn't in the previous iteration.
         if current_hotkey and not hotkey_prev:
             if not is_recording:
@@ -201,3 +201,32 @@ def dictate():
             data = stream.read(CHUNK)
             frames.append(data)
         time.sleep(0.05)  # Small delay to prevent high CPU usage
+
+
+# New function for web interface – process an uploaded audio file
+def transcribe_audio_file(audio_file):
+    TEMP_WAV = "temp_uploaded.wav"
+    # Save the uploaded audio file temporarily
+    with open(TEMP_WAV, "wb") as f:
+        f.write(audio_file.read())
+    print("Transcribing audio with Whisper...")
+    try:
+        with open(TEMP_WAV, "rb") as af:
+            transcription = client.audio.transcriptions.create(model="whisper-1", file=af)
+            transcribed_text = transcription.text
+    except Exception as e:
+        print("Error during transcription:", e)
+        return "Transcription failed."
+    finally:
+        if os.path.exists(TEMP_WAV):
+            os.remove(TEMP_WAV)
+    print("Sending transcription to GPT-4 for cleaning...")
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "developer", "content": "Clean the dictation by removing unnecessary words while staying as close as possible to the original dictation."},
+            {"role": "user", "content": f"Dictation to clean up:\n\n{transcribed_text}"},
+        ],
+    )
+    cleaned_text = response.choices[0].message.content
+    return cleaned_text
